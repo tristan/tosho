@@ -7,7 +7,7 @@ use crate::models::Quality;
 #[derive(Debug)]
 pub enum Error {
     DbError(PostgresError),
-    QualityError(String)
+    // QualityError(String)
 }
 
 impl From<PostgresError> for Error {
@@ -64,14 +64,14 @@ impl Database {
 
 
     pub fn add_show_and_episodes(
-        &self, group: &str, name: &str, quality: &Quality, episodes: &Vec<(i32, i32, String, bool)>
+        &self, group: &str, name: &str, quality: &Option<Quality>, episodes: &Vec<(i32, i32, String, bool)>
     ) -> Result<(), Error> {
         let trans = self.conn.transaction()?;
         let q = trans.query(r#"INSERT INTO shows
                                ("group", name, quality)
                                VALUES ($1, $2, $3)
                                RETURNING show_id"#,
-                            &[&group, &name, &quality.to_string()])?;
+                            &[&group, &name, &quality])?;
         let show_id: i64 = q.get(0).get(0);
         for ep in episodes {
             trans.execute(r#"INSERT INTO episodes
@@ -100,23 +100,28 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_show_id(&self, group: &str, name: &str, quality: &Quality) -> Result<Option<i64>, Error> {
+    pub fn get_show_id(&self, group: &str, name: &str, quality: &Option<Quality>) -> Result<Option<i64>, Error> {
         let rows = self.conn.query(
-            r#"SELECT show_id FROM shows WHERE
+            r#"SELECT show_id, quality FROM shows WHERE
                       LOWER("group") = LOWER($1) AND
-                      LOWER(name) = LOWER($2) AND
-                      LOWER(quality) = LOWER($3)"#,
-            &[&group, &name, &quality.to_string()])?;
+                      LOWER(name) = LOWER($2)"#,
+            &[&group, &name])?;
         if rows.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(rows.get(0).get(0)))
+            for row in rows.into_iter() {
+                let db_quality: Option<Quality> = row.get(1);
+                if &db_quality == quality {
+                    return Ok(Some(row.get(0)));
+                }
+            }
+            return Ok(None);
         }
     }
 
     pub fn get_episode(
         &self, show_id: &i64, episode: &i32, version: &i32
-    ) -> Result<Option<(i64, String, String, Quality, i32, i32)>, Error> {
+    ) -> Result<Option<(i64, String, String, Option<Quality>, i32, i32)>, Error> {
         let rows = self.conn.query(
             r#"SELECT e.show_id, s.name, s.group, s.quality, e.episode, e.version
                FROM episodes e
@@ -128,14 +133,12 @@ impl Database {
             Ok(None)
         } else {
             let row = rows.get(0);
-            let q: String = row.get(3);
             Ok(Some((row.get(0), row.get(1), row.get(2),
-                     q.parse::<Quality>().map_err(|_| Error::QualityError(q))?,
-                     row.get(4), row.get(5))))
+                     row.get(3), row.get(4), row.get(5))))
         }
     }
 
-    pub fn list_episodes_missing_nzb(&self) -> Result<Vec<(i64, String, String, Quality, i32, i32)>, Error> {
+    pub fn list_episodes_missing_nzb(&self) -> Result<Vec<(i64, String, String, Option<Quality>, i32, i32)>, Error> {
         let rows = self.conn.query(
             r#"SELECT e.show_id, s.name, s.group, s.quality, e.episode, e.version
                FROM episodes e
@@ -144,10 +147,8 @@ impl Database {
                WHERE e.link = ''"#,
             &[])?;
         let results = rows.iter().map(|row| {
-            let q: String = row.get(3);
             Ok((row.get(0), row.get(1), row.get(2),
-                q.parse::<Quality>().map_err(|_| Error::QualityError(q))?,
-                row.get(4), row.get(5)))
+                row.get(3), row.get(4), row.get(5)))
         }).collect::<Result<Vec<_>, Error>>()?;
         Ok(results)
     }

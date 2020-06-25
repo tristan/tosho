@@ -2,6 +2,8 @@
 extern crate clap;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate postgres;
 
 use clap::{Arg, App, SubCommand};
 
@@ -48,8 +50,7 @@ fn main() {
                          .long("quality")
                          .possible_values(&["480p", "480", "LOW", "low", "Low", "LQ", "lq", "Lq",
                                             "720p", "720", "MID", "mid", "Mid",
-                                            "1080p", "1080", "HD", "hd", "Hd"])
-                         .default_value("720p"))
+                                            "1080p", "1080", "HD", "hd", "Hd"]))
                     .arg(Arg::with_name("start")
                          .help("The episode number to start from")
                          .short("s")
@@ -77,9 +78,9 @@ fn main() {
                 .join(" ");
             let start = value_t!(add_matches.value_of("start"), i32)
                 .unwrap_or_else(|e| e.exit());
-            let quality = add_matches.value_of("quality").unwrap()
-                .parse::<models::Quality>().unwrap();
-            commands::add(&db, &group, &name, start, quality)
+            let quality = add_matches.value_of("quality")
+                .map(|q| q.parse::<models::Quality>().unwrap());
+            commands::add(&db, &group, &name, start, &quality)
                 .unwrap_or_else(|e| e.exit());
         },
         ("check", Some(_check_matches)) => {

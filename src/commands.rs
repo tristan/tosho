@@ -38,15 +38,21 @@ impl From<SabnzbdError> for Error {
     }
 }
 
-pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: Quality) -> Result<(), Error> {
+pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: &Option<Quality>) -> Result<(), Error> {
     println!("[{}] {} - {} [{:?}]", group, name, start, quality);
-    let items = tosho::search(&[group, " ", name, " ", &quality.to_string()].join(" "))?;
+    let items = tosho::search(&[
+        group, " ", name, " ",
+        &match quality {
+            Some(q) => q.to_string(),
+            None => "".to_string()
+        }
+    ].join(" "))?;
     let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
     for item in items {
         if let Some(ep) = utils::match_title_re(&item.title) {
             if ep.group != group ||
                 ep.name != name ||
-                ep.quality != quality {
+                &ep.quality != quality {
                 continue;
             }
             println!("{} {} {} v{} {:?} {:?}", ep.group, ep.name, ep.episode, ep.version, ep.quality, ep.extension);
@@ -81,7 +87,9 @@ pub fn check(db: &Database) -> Result<(), Error> {
             if let Some(ep) = utils::match_title_re(&item.title) {
                 if let Some(show_id) = db.get_show_id(&ep.group, &ep.name, &ep.quality)? {
                     print!("Found [{}] {} - {} v{} [{}]",
-                           ep.group, ep.name, ep.episode, ep.version, ep.quality.to_string());
+                           ep.group, ep.name, ep.episode, ep.version,
+                           ep.quality.map(|q| q.to_string())
+                           .unwrap_or_else(|| "".to_string()));
                     if item.nzb_link == "" {
                         println!(" -- MISSING NZB LINK")
                     } else {
@@ -111,7 +119,9 @@ pub fn recheck(db: &Database, page: u8) -> Result<(), Error> {
             if let Some(show_id) = db.get_show_id(&ep.group, &ep.name, &ep.quality)? {
                 if let None = db.get_episode(&show_id, &ep.episode, &ep.version)? {
                     print!("Found [{}] {} - {} v{} [{}]",
-                           ep.group, ep.name, ep.episode, ep.version, ep.quality.to_string());
+                           ep.group, ep.name, ep.episode, ep.version,
+                           ep.quality.map(|q| q.to_string())
+                           .unwrap_or_else(|| "".to_string()));
                     if item.nzb_link == "" {
                         println!(" -- MISSING NZB LINK")
                     } else {
@@ -121,7 +131,9 @@ pub fn recheck(db: &Database, page: u8) -> Result<(), Error> {
                         show_id, ep.episode, ep.version, item.nzb_link.to_string()));
                 } else {
                     println!("Skipping existing [{}] {} - {} v{} [{}]",
-                             ep.group, ep.name, ep.episode, ep.version, ep.quality.to_string());
+                             ep.group, ep.name, ep.episode, ep.version,
+                             ep.quality.map(|q| q.to_string())
+                             .unwrap_or_else(|| "".to_string()));
                 }
             }
         }
@@ -143,12 +155,15 @@ pub fn check_missing(db: &Database) -> Result<(), Error> {
         let episode_no = episode.4;
         let version = episode.5;
         println!("Checking for: [{}] {} - {} v{} [{}]",
-                 group, name, episode_no, version, quality.to_string());
+                 group, name, episode_no, version,
+                 quality.as_ref().map(|q| q.to_string())
+                 .unwrap_or_else(|| "".to_string()));
 
         let terms = {
             let arr: [&str; 4] = [&group, &name,
                                   &format!("{:02}", episode_no),
-                                  &quality.to_string()];
+                                  &quality.as_ref().map(|q| q.to_string())
+                                  .unwrap_or_else(|| "".to_string())];
             arr.join(" ")
         };
         let results = tosho::search(&terms)?;
@@ -159,7 +174,9 @@ pub fn check_missing(db: &Database) -> Result<(), Error> {
             if let Some(ep) = utils::match_title_re(&item.title) {
                 if ep.group == group && ep.name == name && ep.episode == episode_no && ep.quality == quality {
                     println!("Found [{}] {} - {} v{} [{}]",
-                             ep.group, ep.name, ep.episode, ep.version, ep.quality.to_string());
+                             ep.group, ep.name, ep.episode, ep.version,
+                             ep.quality.map(|q| q.to_string())
+                             .unwrap_or_else(|| "".to_string()));
                     new_episodes.push((
                         show_id, ep.episode, ep.version, item.nzb_link.to_string()));
                 }

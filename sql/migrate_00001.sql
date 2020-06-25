@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS shows (
     show_id BIGSERIAL PRIMARY KEY,
     "group" VARCHAR NOT NULL,
     name VARCHAR NOT NULL,
-    quality VARCHAR NOT NULL
+    quality VARCHAR
 );
 
 CREATE INDEX IF NOT EXISTS idx_shows_group_name_quality
