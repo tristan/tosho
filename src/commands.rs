@@ -1,5 +1,7 @@
 use std::process;
 
+use wildmatch::WildMatch;
+
 use crate::models::Quality;
 use crate::database::{Database, Error as DatabaseError};
 use crate::sabnzbd::{SabnzbdClient, Error as SabnzbdError};
@@ -50,9 +52,14 @@ pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: &Option<
     let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
     for item in items {
         if let Some(ep) = utils::match_title_re(&item.title) {
-            if ep.group != group ||
-                ep.name != name ||
-                &ep.quality != quality {
+            if group.contains("*") {
+                if !WildMatch::new(&group).is_match(&ep.group) {
+                    continue;
+                }
+            } else if ep.group != group {
+                continue;
+            }
+            if ep.name != name || &ep.quality != quality {
                 continue;
             }
             println!("{} {} {} v{} {:?} {:?}", ep.group, ep.name, ep.episode, ep.version, ep.quality, ep.extension);
@@ -172,7 +179,14 @@ pub fn check_missing(db: &Database) -> Result<(), Error> {
                 continue;
             }
             if let Some(ep) = utils::match_title_re(&item.title) {
-                if ep.group == group && ep.name == name && ep.episode == episode_no && ep.quality == quality {
+                if group.contains("*") {
+                    if !WildMatch::new(&group).is_match(&ep.group) {
+                        continue;
+                    }
+                } else if ep.group != group {
+                    continue;
+                }
+                if ep.name == name && ep.episode == episode_no && ep.quality == quality {
                     println!("Found [{}] {} - {} v{} [{}]",
                              ep.group, ep.name, ep.episode, ep.version,
                              ep.quality.map(|q| q.to_string())

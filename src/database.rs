@@ -1,7 +1,7 @@
 use postgres::{Connection, TlsMode, Error as PostgresError};
 use std::fs;
 use chrono::NaiveDateTime;
-
+use wildmatch::WildMatch;
 use crate::models::Quality;
 
 #[derive(Debug)]
@@ -102,14 +102,21 @@ impl Database {
 
     pub fn get_show_id(&self, group: &str, name: &str, quality: &Option<Quality>) -> Result<Option<i64>, Error> {
         let rows = self.conn.query(
-            r#"SELECT show_id, quality FROM shows WHERE
-                      LOWER("group") = LOWER($1) AND
+            r#"SELECT show_id, group, quality FROM shows WHERE
                       LOWER(name) = LOWER($2)"#,
             &[&group, &name])?;
         if rows.is_empty() {
             Ok(None)
         } else {
             for row in rows.into_iter() {
+                let db_group: String = row.get(0);
+                if db_group.contains("*") {
+                    if !WildMatch::new(&db_group).is_match(group) {
+                        continue;
+                    }
+                } else if &db_group != group {
+                    continue;
+                }
                 let db_quality: Option<Quality> = row.get(1);
                 if &db_quality == quality {
                     return Ok(Some(row.get(0)));
