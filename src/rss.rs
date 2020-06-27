@@ -4,19 +4,18 @@ use quick_xml::events::Event;
 use quick_xml::events::attributes::Attributes;
 use quick_xml::Error as XmlError;
 use chrono::{NaiveDate, NaiveDateTime, DateTime, ParseError as ChronoParseError};
-use failure::Fail;
 
 #[derive(Debug)]
 pub enum Error {
     Eof,
-    Xml(failure::Compat<XmlError>),
+    Xml(XmlError),
     MissingExpectedValue,
     ChronoParseError(ChronoParseError),
 }
 
 impl From<XmlError> for Error {
     fn from(err: XmlError) -> Error {
-        Error::Xml(err.compat())
+        Error::Xml(err)
     }
 }
 

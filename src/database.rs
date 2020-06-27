@@ -6,8 +6,7 @@ use crate::models::Quality;
 
 #[derive(Debug)]
 pub enum Error {
-    DbError(PostgresError),
-    // QualityError(String)
+    DbError(PostgresError)
 }
 
 impl From<PostgresError> for Error {
@@ -102,14 +101,14 @@ impl Database {
 
     pub fn get_show_id(&self, group: &str, name: &str, quality: &Option<Quality>) -> Result<Option<i64>, Error> {
         let rows = self.conn.query(
-            r#"SELECT show_id, group, quality FROM shows WHERE
-                      LOWER(name) = LOWER($2)"#,
-            &[&group, &name])?;
+            r#"SELECT show_id, "group", quality FROM shows WHERE
+                      LOWER(name) = LOWER($1)"#,
+            &[&name])?;
         if rows.is_empty() {
             Ok(None)
         } else {
             for row in rows.into_iter() {
-                let db_group: String = row.get(0);
+                let db_group: String = row.get(1);
                 if db_group.contains("*") {
                     if !WildMatch::new(&db_group).is_match(group) {
                         continue;
@@ -117,7 +116,7 @@ impl Database {
                 } else if &db_group != group {
                     continue;
                 }
-                let db_quality: Option<Quality> = row.get(1);
+                let db_quality: Option<Quality> = row.get(2);
                 if &db_quality == quality {
                     return Ok(Some(row.get(0)));
                 }
