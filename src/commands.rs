@@ -51,7 +51,7 @@ pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: &Option<
     ].join(" "))?;
     let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
     for item in items {
-        if let Some(ep) = utils::match_title_re(&item.title) {
+        if let Some(ep) = utils::match_title(&item.title) {
             if group.contains("*") {
                 if !WildMatch::new(&group).is_match(&ep.group) {
                     continue;
@@ -91,7 +91,7 @@ pub fn check(db: &Database) -> Result<(), Error> {
             if item.pub_date > newest_pub_date {
                 newest_pub_date = item.pub_date;
             }
-            if let Some(ep) = utils::match_title_re(&item.title) {
+            if let Some(ep) = utils::match_title(&item.title) {
                 if let Some(show_id) = db.get_show_id(&ep.group, &ep.name, &ep.quality)? {
                     print!("Found [{}] {} - {} v{} [{}]",
                            ep.group, ep.name, ep.episode, ep.version,
@@ -121,7 +121,7 @@ pub fn recheck(db: &Database, page: u8) -> Result<(), Error> {
     println!("getting feed page: {}", page);
     let items = tosho::feed(&page)?;
     for item in items {
-        if let Some(ep) = utils::match_title_re(&item.title) {
+        if let Some(ep) = utils::match_title(&item.title) {
             //dbg!(&ep);
             if let Some(show_id) = db.get_show_id(&ep.group, &ep.name, &ep.quality)? {
                 if let None = db.get_episode(&show_id, &ep.episode, &ep.version)? {
@@ -178,7 +178,7 @@ pub fn check_missing(db: &Database) -> Result<(), Error> {
             if item.nzb_link == "" {
                 continue;
             }
-            if let Some(ep) = utils::match_title_re(&item.title) {
+            if let Some(ep) = utils::match_title(&item.title) {
                 if group.contains("*") {
                     if !WildMatch::new(&group).is_match(&ep.group) {
                         continue;

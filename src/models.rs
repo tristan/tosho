@@ -86,32 +86,3 @@ pub struct Episode {
     pub version: i32,
     pub extension: Option<String>
 }
-
-impl Episode {
-    pub fn from(caps: &regex::Captures) -> Option<Episode> {
-        let group = caps.name("group")?
-            .as_str().to_string();
-        let name = caps.name("name")?
-            .as_str().to_string();
-        let episode = caps.name("episode")?
-            .as_str()
-            .parse::<i32>()
-            .unwrap_or(0);
-        let version = caps.name("version")
-            .map(|v| {
-                v.as_str()
-                    .parse::<i32>()
-                    .unwrap()
-            })
-            .unwrap_or(1);
-        let quality = caps.name("quality")?
-            .as_str()
-            .parse::<Quality>()
-            .ok();
-        let extension = caps.name("ext")
-            .map(|e| e.as_str().to_string());
-        Some(Episode {
-            group, name, quality, episode, version, extension
-        })
-    }
-}
