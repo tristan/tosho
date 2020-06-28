@@ -2,7 +2,11 @@ use std::str::FromStr;
 use std::string::ToString;
 use std::convert::From;
 use std::error::Error;
-use postgres::types::{self, ToSql, FromSql};
+use rusqlite::Error as RusqliteError;
+use rusqlite::types::{
+    ToSql, ToSqlOutput,
+    FromSql, FromSqlResult, ValueRef, FromSqlError
+};
 
 #[allow(non_camel_case_types)]
 #[derive(Debug,PartialEq)]
@@ -48,33 +52,19 @@ impl ToString for Quality {
 }
 
 impl FromSql for Quality {
-    fn from_sql(
-        ty: &types::Type,
-        raw: &[u8]
-    ) -> Result<Self, Box<dyn Error + 'static + Send + Sync>> {
-        let s: String = String::from_sql(ty, raw)?;
-        Ok(Quality::from_str(&s)?)
-    }
-
-    fn accepts(ty: &types::Type) -> bool {
-        <String as FromSql>::accepts(ty)
+    fn column_result(value: ValueRef) -> FromSqlResult<Self> {
+        value.as_str()
+            .and_then(|s| match Quality::from_str(&s) {
+                Ok(q) => Ok(q),
+                Err(e) => Err(FromSqlError::Other(Box::new(e)))
+            })
     }
 }
 
 impl ToSql for Quality {
-    fn to_sql(
-        &self,
-        ty: &types::Type,
-        out: &mut Vec<u8>
-    ) -> Result<types::IsNull, Box<dyn Error + Sync + Send>> {
-        (*self).to_string().to_sql(ty, out)
+    fn to_sql(&self) -> Result<ToSqlOutput, RusqliteError> {
+        Ok(ToSqlOutput::from(self.to_string()))
     }
-
-    fn accepts(ty: &types::Type) -> bool {
-        <String as ToSql>::accepts(ty)
-    }
-
-    to_sql_checked!();
 }
 
 #[derive(Debug)]

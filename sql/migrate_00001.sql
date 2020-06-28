@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS tosho (
 );
 
 INSERT INTO tosho
-SELECT (NOW() AT TIME ZONE 'UTC' - INTERVAL '1 WEEK')
+SELECT (datetime('now', '-7 days'))
 WHERE NOT EXISTS
 (SELECT * FROM tosho);
 

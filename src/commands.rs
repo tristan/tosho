@@ -40,7 +40,13 @@ impl From<SabnzbdError> for Error {
     }
 }
 
-pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: &Option<Quality>) -> Result<(), Error> {
+pub fn add(
+    db: &mut Database,
+    group: &str,
+    name: &str,
+    start: i32,
+    quality: &Option<Quality>
+) -> Result<(), Error> {
     println!("[{}] {} - {} [{:?}]", group, name, start, quality);
     let items = tosho::search(&[
         group, " ", name, " ",
@@ -73,8 +79,8 @@ pub fn add(db: &Database, group: &str, name: &str, start: i32, quality: &Option<
     Ok(())
 }
 
-pub fn check(db: &Database) -> Result<(), Error> {
-    let last_pub_date = db.get_last_pub_date();
+pub fn check(db: &mut Database) -> Result<(), Error> {
+    let last_pub_date = db.get_last_pub_date()?;
     let mut newest_pub_date = last_pub_date.clone();
     let mut page = 1;
     let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
@@ -116,7 +122,7 @@ pub fn check(db: &Database) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn recheck(db: &Database, page: u8) -> Result<(), Error> {
+pub fn recheck(db: &mut Database, page: u8) -> Result<(), Error> {
     let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
     println!("getting feed page: {}", page);
     let items = tosho::feed(&page)?;
@@ -151,7 +157,7 @@ pub fn recheck(db: &Database, page: u8) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn check_missing(db: &Database) -> Result<(), Error> {
+pub fn check_missing(db: &mut Database) -> Result<(), Error> {
     let missing_episodes = db.list_episodes_missing_nzb()?;
     let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
     for episode in missing_episodes {

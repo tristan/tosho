@@ -5,7 +5,7 @@ fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
     let mut rsn = text.rsplitn(2, " - ").map(str::trim);
     match rsn.next() {
         Some(epv) => {
-            let epv = if epv.ends_with("END") {
+            let epv = if epv.ends_with(" END") {
                 &epv[..epv.len() - 3]
             } else {
                 epv

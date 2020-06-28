@@ -26,6 +26,7 @@ impl Config {
         let mut home_dir: PathBuf = env::var_os("HOME")
             .map(PathBuf::from).unwrap();
         home_dir.push(".config");
+        home_dir.push("tosho");
         home_dir.push("tosho.toml");
         let mut file = File::open(&home_dir).unwrap();
         let mut toml_str = String::new();

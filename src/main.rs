@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate postgres;
-
 use gumdrop::Options;
 
 mod config;
@@ -17,7 +14,7 @@ mod sabnzbd;
 fn main() {
     let config = config::Config::load();
 
-    let db = database::connect(&config.database.url);
+    let mut db = database::connect().unwrap();
     let sabnzbd = sabnzbd::SabnzbdClient::new(
         &config.sabnzbd.url,
         &config.sabnzbd.apikey);
@@ -32,7 +29,7 @@ fn main() {
                 &opts.group
             };
             let start = opts.start.unwrap_or(1);
-            commands::add(&db, group, &opts.show, start, &opts.quality)
+            commands::add(&mut db, group, &opts.show, start, &opts.quality)
                 .unwrap_or_else(|e| e.exit());
         },
         Some(options::Command::Queue(_)) => {
@@ -40,13 +37,13 @@ fn main() {
                 .unwrap_or_else(|e| e.exit());
         },
         Some(options::Command::Check(_)) => {
-            commands::check_missing(&db)
+            commands::check_missing(&mut db)
                 .unwrap_or_else(|e| e.exit());
-            commands::check(&db)
+            commands::check(&mut db)
                 .unwrap_or_else(|e| e.exit());
         },
         Some(options::Command::Recheck(opts)) => {
-            commands::recheck(&db, opts.page.unwrap_or(1))
+            commands::recheck(&mut db, opts.page.unwrap_or(1))
                 .unwrap_or_else(|e| e.exit());
         },
         None => {
