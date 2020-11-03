@@ -47,6 +47,25 @@ pub fn match_title(title: &str) -> Option<Episode> {
                 Some((name, episode, version)) => (name, episode, version),
                 None => return None
             };
+            let (qidx, version) = if version == 1 && &title[qidx+1..qidx+2] == "v" {
+                match title[qidx+1..].find("]") {
+                    Some(veidx) => match title[qidx+2..qidx+1+veidx].parse::<i32>() {
+                        Ok(v) => {
+                            if let Some(qsidx) = title[qidx+2..].find("[") {
+                                (qidx + 2 + qsidx, v)
+                            } else {
+                                return None
+                            }
+                        },
+                        Err(_) => return None
+                    },
+                    None => return None
+                }
+            } else if &title[qidx+1..qidx+5] == "VRV]" {
+                (qidx + 5, version)
+            } else {
+                (qidx, version)
+            };
             let quality = match title[qidx+1..].find("]") {
                 Some(qeidx) => Quality::from_str(&title[qidx+1..qidx+1+qeidx]).ok(),
                 None => return None
@@ -141,5 +160,24 @@ mod test {
         assert_eq!(ep.episode, 12);
         assert_eq!(ep.quality, Some(Quality::Mid_720p));
         assert_eq!(ep.version, 1);
+
+        let ep = match_title("[Erai-raws] Majo no Tabitabi - 02 [v0][720p].mkv")
+            .expect("Failed to match 6th example");
+
+        assert_eq!(ep.name, "Majo no Tabitabi");
+        assert_eq!(ep.group, "Erai-raws");
+        assert_eq!(ep.episode, 2);
+        assert_eq!(ep.quality, Some(Quality::Mid_720p));
+        assert_eq!(ep.version, 0);
+
+        let ep = match_title("[Erai-raws] Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka III - 05v2 [VRV][480p][Multiple Subtitle].mkv")
+            .expect("Failed to match 7th example");
+
+        assert_eq!(ep.name, "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka III");
+        assert_eq!(ep.group, "Erai-raws");
+        assert_eq!(ep.episode, 5);
+        assert_eq!(ep.quality, Some(Quality::Low_480p));
+        assert_eq!(ep.version, 2);
+
     }
 }

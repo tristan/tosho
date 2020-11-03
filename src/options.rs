@@ -37,7 +37,7 @@ pub struct AddOpts {
 
 #[derive(Debug, Options)]
 pub struct RecheckOpts {
-    #[options(free, help="Thre group name")]
+    #[options(free, help="Which rss page to recheck")]
     pub page: Option<u8>
 }
 
