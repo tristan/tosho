@@ -1,19 +1,16 @@
-use std::str::FromStr;
-use std::string::ToString;
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
+use rusqlite::Error as RusqliteError;
 use std::convert::From;
 use std::error::Error;
-use rusqlite::Error as RusqliteError;
-use rusqlite::types::{
-    ToSql, ToSqlOutput,
-    FromSql, FromSqlResult, ValueRef, FromSqlError
-};
+use std::str::FromStr;
+use std::string::ToString;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug,PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum Quality {
     Low_480p,
     Mid_720p,
-    HD_1080p
+    HD_1080p,
 }
 
 #[derive(Debug)]
@@ -30,12 +27,9 @@ impl FromStr for Quality {
 
     fn from_str(s: &str) -> Result<Quality, BadQuality> {
         match s {
-            "480p" | "480" | "LOW" | "low" | "Low" | "LQ" | "Lq" | "lq" =>
-                Ok(Quality::Low_480p),
-            "720p" | "720" | "MID" | "mid" | "Mid" =>
-                Ok(Quality::Mid_720p),
-            "1080p" | "1080" | "HD" | "hd" | "Hd" =>
-                Ok(Quality::HD_1080p),
+            "480p" | "480" | "LOW" | "low" | "Low" | "LQ" | "Lq" | "lq" => Ok(Quality::Low_480p),
+            "720p" | "720" | "MID" | "mid" | "Mid" => Ok(Quality::Mid_720p),
+            "1080p" | "1080" | "HD" | "hd" | "Hd" => Ok(Quality::HD_1080p),
             _ => Err(BadQuality),
         }
     }
@@ -46,18 +40,17 @@ impl ToString for Quality {
         match *self {
             Quality::Low_480p => String::from("480p"),
             Quality::Mid_720p => String::from("720p"),
-            Quality::HD_1080p => String::from("1080p")
+            Quality::HD_1080p => String::from("1080p"),
         }
     }
 }
 
 impl FromSql for Quality {
     fn column_result(value: ValueRef) -> FromSqlResult<Self> {
-        value.as_str()
-            .and_then(|s| match Quality::from_str(&s) {
-                Ok(q) => Ok(q),
-                Err(e) => Err(FromSqlError::Other(Box::new(e)))
-            })
+        value.as_str().and_then(|s| match Quality::from_str(s) {
+            Ok(q) => Ok(q),
+            Err(e) => Err(FromSqlError::Other(Box::new(e))),
+        })
     }
 }
 
@@ -74,5 +67,5 @@ pub struct Episode {
     pub quality: Option<Quality>,
     pub episode: i32,
     pub version: i32,
-    pub extension: Option<String>
+    pub extension: Option<String>,
 }

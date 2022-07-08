@@ -1,9 +1,9 @@
-use std::io::BufRead;
-use quick_xml::Reader;
-use quick_xml::events::Event;
+use chrono::{DateTime, NaiveDate, NaiveDateTime, ParseError as ChronoParseError};
 use quick_xml::events::attributes::Attributes;
+use quick_xml::events::Event;
 use quick_xml::Error as XmlError;
-use chrono::{NaiveDate, NaiveDateTime, DateTime, ParseError as ChronoParseError};
+use quick_xml::Reader;
+use std::io::BufRead;
 
 #[derive(Debug)]
 pub enum Error {
@@ -43,7 +43,7 @@ impl Default for Item {
             nzb_link: String::default(),
             torrent_link: String::default(),
             pub_date: NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0),
-            guid: String::default()
+            guid: String::default(),
         }
     }
 }
@@ -65,12 +65,9 @@ pub fn read_from<R: BufRead>(reader: R) -> Result<Vec<Item>, Error> {
     loop {
         match reader.read_event(&mut buf) {
             Ok(Event::Start(ref e)) => {
-                match e.name() {
-                    b"item" => {
-                        let item = Item::from_xml(&mut reader, e.attributes())?;
-                        items.push(item);
-                    }
-                    _ => (),
+                if let b"item" = e.name() {
+                    let item = Item::from_xml(&mut reader, e.attributes())?;
+                    items.push(item);
                 }
             }
             Ok(Event::Eof) => break, // exits the loop when reaching end of file
@@ -101,26 +98,32 @@ impl Item {
                             }
                             "application/x-bittorrent" => {
                                 item.torrent_link = enclosure.url;
-                            },
+                            }
                             _ => {}
                         }
                     }
                     b"title" => item.title = element_text(reader)?,
                     b"link" => item.link = element_text(reader)?,
-                    b"pubDate" => item.pub_date = DateTime::parse_from_rfc2822(&element_text(reader)?)?
-                        .naive_utc(),
+                    b"pubDate" => {
+                        item.pub_date =
+                            DateTime::parse_from_rfc2822(&element_text(reader)?)?.naive_utc()
+                    }
                     b"guid" => {
                         let guid = element_text(reader)?;
-                        if guid.starts_with("https://mirror.animetosho.org/view/") {
-                            item.guid = guid[35..].to_string();
-                        } else if guid.starts_with("https://animetosho.org/view/") {
-                            item.guid = guid[28..].to_string();
+                        if let Some(suffix) =
+                            guid.strip_prefix("https://mirror.animetosho.org/view/")
+                        {
+                            item.guid = suffix.to_string();
+                        } else if let Some(suffix) =
+                            guid.strip_prefix("https://animetosho.org/view/")
+                        {
+                            item.guid = suffix.to_string();
                         }
                     }
                     n => {
                         reader.read_to_end(n, &mut Vec::new())?;
                     }
-                }
+                },
                 Event::End(_) => break,
                 Event::Eof => return Err(Error::Eof),
                 _ => {}
@@ -132,22 +135,23 @@ impl Item {
 }
 
 impl Enclosure {
-    fn from_xml<R: BufRead>(reader: &mut Reader<R>, mut attributes: Attributes) -> Result<Self, Error> {
+    fn from_xml<R: BufRead>(
+        reader: &mut Reader<R>,
+        mut attributes: Attributes,
+    ) -> Result<Self, Error> {
         let mut enclosure = Enclosure::default();
-        for attr in attributes.with_checks(false) {
-            if let Ok(attr) = attr {
-                match attr.key {
-                    b"url" => {
-                        enclosure.url = attr.unescape_and_decode_value(reader)?;
-                    }
-                    b"length" => {
-                        enclosure.length = attr.unescape_and_decode_value(reader)?;
-                    }
-                    b"type" => {
-                        enclosure.mime_type = attr.unescape_and_decode_value(reader)?;
-                    }
-                    _ => {}
+        for attr in attributes.with_checks(false).flatten() {
+            match attr.key {
+                b"url" => {
+                    enclosure.url = attr.unescape_and_decode_value(reader)?;
                 }
+                b"length" => {
+                    enclosure.length = attr.unescape_and_decode_value(reader)?;
+                }
+                b"type" => {
+                    enclosure.mime_type = attr.unescape_and_decode_value(reader)?;
+                }
+                _ => {}
             }
         }
         reader.read_to_end(b"enclosure", &mut Vec::new())?;
@@ -181,7 +185,7 @@ pub fn element_text<R: BufRead>(reader: &mut Reader<R>) -> Result<String, Error>
 
     match content {
         Some(c) => Ok(c),
-        None => Err(Error::MissingExpectedValue)
+        None => Err(Error::MissingExpectedValue),
     }
 }
 
@@ -235,11 +239,17 @@ mod test {
         let reader = Cursor::new(data.as_bytes());
         let items = read_from(reader).unwrap();
         let item = &items[0];
-        assert_eq!(item.title, "[Judas] Dorohedoro - 08 v2 [1080p][HEVC x265 10bit][Eng-Subs].mkv");
+        assert_eq!(
+            item.title,
+            "[Judas] Dorohedoro - 08 v2 [1080p][HEVC x265 10bit][Eng-Subs].mkv"
+        );
         assert_eq!(item.nzb_link, "http://animetosho.org/storage/nzbs/00053c86/%5BJudas%5D%20Dorohedoro%20-%2008%20v2%20%5B1080p%5D%5BHEVC%20x265%2010bit%5D%5BEng-Subs%5D.nzb");
 
         let item = &items[1];
-        assert_eq!(item.title, "[Judas] Dorohedoro - 09 [1080p][HEVC x265 10bit][Eng-Subs]");
+        assert_eq!(
+            item.title,
+            "[Judas] Dorohedoro - 09 [1080p][HEVC x265 10bit][Eng-Subs]"
+        );
         assert_eq!(item.nzb_link, "http://animetosho.org/storage/nzbs/00053fd0/%5BJudas%5D%20Dorohedoro%20-%2009%20%5B1080p%5D%5BHEVC%20x265%2010bit%5D%5BEng-Subs%5D.nzb");
     }
 }

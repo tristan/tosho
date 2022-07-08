@@ -2,12 +2,11 @@
 name = "tosho"
 version = "0.1.0"
 authors = ["Tristan King <tristan.king@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 toml = "0.5"
 quick-xml = "0.18"
-#postgres = { version = "0.15", features = ["with-chrono"] }
 chrono = "0.4"
 gumdrop = "0.8"
 curl = "0.4"
@@ -15,4 +14,4 @@ url = "2.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 wildmatch = "1.0"
-rusqlite = { version = "0.23", features = ["chrono"] }
+rusqlite = { version = "0.27", features = ["chrono"] }

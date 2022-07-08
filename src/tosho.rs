@@ -1,5 +1,5 @@
-use crate::rss;
 use crate::curl;
+use crate::rss;
 
 const ANIMETOSHO_RSS_URL: &str = "https://feed.animetosho.org/rss2";
 
@@ -29,9 +29,7 @@ impl From<rss::Error> for Error {
 }
 
 pub fn search(terms: &str) -> Result<Vec<rss::Item>, Error> {
-    let query = terms.split(" ")
-        .collect::<Vec<&str>>()
-        .join("+");
+    let query = terms.split(' ').collect::<Vec<&str>>().join("+");
 
     let url = &[ANIMETOSHO_RSS_URL, "?q=", &query].join("");
     results_from_url(url)

@@ -1,6 +1,6 @@
-use url::Url;
-use serde::Deserialize;
 use crate::curl;
+use serde::Deserialize;
+use url::Url;
 
 #[derive(Debug)]
 pub enum Error {
@@ -23,14 +23,14 @@ impl From<curl::Error> for Error {
 
 pub struct SabnzbdClient {
     host: String,
-    apikey: String
+    apikey: String,
 }
 
-#[derive(Debug,Deserialize)]
+#[derive(Deserialize)]
 struct JsonResponse {
     status: bool,
     error: Option<String>,
-    nzo_ids: Option<Vec<String>>
+    //nzo_ids: Option<Vec<String>>
 }
 
 fn handle_response(json: JsonResponse) -> Result<(), Error> {
@@ -46,12 +46,11 @@ fn handle_response(json: JsonResponse) -> Result<(), Error> {
 }
 
 impl SabnzbdClient {
-
     pub fn new(host: &str, apikey: &str) -> SabnzbdClient {
         // TODO: sanitize host to start with http and not end with /
         SabnzbdClient {
             host: host.to_string(),
-            apikey: apikey.to_string()
+            apikey: apikey.to_string(),
         }
     }
 

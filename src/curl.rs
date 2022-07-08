@@ -1,12 +1,11 @@
-use serde::de::DeserializeOwned;
 use curl::easy::Easy;
-
+use serde::de::DeserializeOwned;
 
 #[derive(Debug)]
 pub enum Error {
     CurlError(curl::Error),
     JsonError(serde_json::Error),
-    Utf8Error
+    Utf8Error,
 }
 
 impl From<curl::Error> for Error {
@@ -14,7 +13,6 @@ impl From<curl::Error> for Error {
         Error::CurlError(err)
     }
 }
-
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Error {
@@ -42,15 +40,12 @@ pub fn get(url: impl AsRef<str>) -> Result<Response, Error> {
     }
     let code = easy.response_code()?;
 
-    Ok(Response {
-        code,
-        body
-    })
+    Ok(Response { code, body })
 }
 
 pub struct Response {
     pub code: u32,
-    pub body: Vec<u8>
+    pub body: Vec<u8>,
 }
 
 impl Response {

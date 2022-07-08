@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use crate::models::{Episode, Quality};
+use std::str::FromStr;
 
 fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
     let mut rsn = text.rsplitn(2, " - ").map(str::trim);
@@ -10,98 +10,102 @@ fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
             } else {
                 epv
             };
-            let mut sn = epv.splitn(2, "v").map(str::trim);
+            let mut sn = epv.splitn(2, 'v').map(str::trim);
             let ep: i32 = match sn.next() {
                 Some(ep) => match ep.parse::<i32>() {
                     Ok(ep) => ep,
-                    Err(_) => return None
+                    Err(_) => return None,
                 },
-                None => return None
+                None => return None,
             };
             let v: i32 = match sn.next() {
                 Some(v) => match v.parse::<i32>() {
                     Ok(v) => v,
-                    Err(_) => return None
+                    Err(_) => return None,
                 },
-                None => 1
+                None => 1,
             };
-            match rsn.next() {
-                Some(name) => Some((name.to_string(), ep, v)),
-                None => None
-            }
-        },
-        None => None
+            rsn.next().map(|name| (name.to_string(), ep, v))
+        }
+        None => None,
     }
 }
 
 pub fn match_title(title: &str) -> Option<Episode> {
-    if !title.starts_with("[") {
+    if !title.starts_with('[') {
         return None;
     }
-    if let Some(idx) = title.find("]") {
+    if let Some(idx) = title.find(']') {
         let group = title[1..idx].to_string();
 
-        if let Some(qidx) = title[idx+1..].find("[") {
+        if let Some(qidx) = title[idx + 1..].find('[') {
             let qidx = qidx + idx + 1;
-            let (name, episode, version) = match match_name_ep_version(&title[idx+1..qidx]) {
+            let (name, episode, version) = match match_name_ep_version(&title[idx + 1..qidx]) {
                 Some((name, episode, version)) => (name, episode, version),
-                None => return None
+                None => return None,
             };
-            let (qidx, version) = if version == 1 && &title[qidx+1..qidx+2] == "v" {
-                match title[qidx+1..].find("]") {
-                    Some(veidx) => match title[qidx+2..qidx+1+veidx].parse::<i32>() {
+            let (qidx, version) = if version == 1 && &title[qidx + 1..qidx + 2] == "v" {
+                match title[qidx + 1..].find(']') {
+                    Some(veidx) => match title[qidx + 2..qidx + 1 + veidx].parse::<i32>() {
                         Ok(v) => {
-                            if let Some(qsidx) = title[qidx+2..].find("[") {
+                            if let Some(qsidx) = title[qidx + 2..].find('[') {
                                 (qidx + 2 + qsidx, v)
                             } else {
-                                return None
+                                return None;
                             }
-                        },
-                        Err(_) => return None
+                        }
+                        Err(_) => return None,
                     },
-                    None => return None
+                    None => return None,
                 }
-            } else if &title[qidx+1..qidx+5] == "VRV]" {
+            } else if &title[qidx + 1..qidx + 5] == "VRV]" {
                 (qidx + 5, version)
             } else {
                 (qidx, version)
             };
-            let quality = match title[qidx+1..].find("]") {
-                Some(qeidx) => Quality::from_str(&title[qidx+1..qidx+1+qeidx]).ok(),
-                None => return None
+            let quality = match title[qidx + 1..].find(']') {
+                Some(qeidx) => Quality::from_str(&title[qidx + 1..qidx + 1 + qeidx]).ok(),
+                None => return None,
             };
-            let extension = if let Some(ext_idx) = title[qidx..].rfind(".") {
-                Some(title[qidx+ext_idx+1..].to_string())
-            } else {
-                None
-            };
+            let extension = title[qidx..]
+                .rfind('.')
+                .map(|ext_idx| title[qidx + ext_idx + 1..].to_string());
             Some(Episode {
-                group, name, episode, version,
-                quality, extension
+                group,
+                name,
+                episode,
+                version,
+                quality,
+                extension,
             })
-        } else if let Some(ext_idx) = title[idx..].rfind(".") {
+        } else if let Some(ext_idx) = title[idx..].rfind('.') {
             let ext_idx = ext_idx + idx;
             let (name, episode, version) = match match_name_ep_version(&title[idx..ext_idx]) {
                 Some((name, episode, version)) => (name, episode, version),
-                None => return None
+                None => return None,
             };
             Some(Episode {
-                group, name, episode, version,
+                group,
+                name,
+                episode,
+                version,
                 quality: None,
-                extension: Some(title[ext_idx+1..].to_string())
+                extension: Some(title[ext_idx + 1..].to_string()),
             })
         } else {
-            let (name, episode, version) = match match_name_ep_version(&title[idx+1..]) {
+            let (name, episode, version) = match match_name_ep_version(&title[idx + 1..]) {
                 Some((name, episode, version)) => (name, episode, version),
-                None => return None
+                None => return None,
             };
             Some(Episode {
-                group, name, episode, version,
+                group,
+                name,
+                episode,
+                version,
                 quality: None,
-                extension: None
+                extension: None,
             })
         }
-
     } else {
         None
     }
@@ -115,7 +119,6 @@ mod test {
 
     #[test]
     fn test_matching() {
-
         let ep = match_title("[Judas] Dorohedoro - 06 [1080p][HEVC x265 10bit][Eng-Subs].mkv")
             .expect("failed to match 1st example");
 
@@ -173,11 +176,13 @@ mod test {
         let ep = match_title("[Erai-raws] Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka III - 05v2 [VRV][480p][Multiple Subtitle].mkv")
             .expect("Failed to match 7th example");
 
-        assert_eq!(ep.name, "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka III");
+        assert_eq!(
+            ep.name,
+            "Dungeon ni Deai wo Motomeru no wa Machigatteiru Darou ka III"
+        );
         assert_eq!(ep.group, "Erai-raws");
         assert_eq!(ep.episode, 5);
         assert_eq!(ep.quality, Some(Quality::Low_480p));
         assert_eq!(ep.version, 2);
-
     }
 }

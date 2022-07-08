@@ -1,12 +1,12 @@
-use gumdrop::Options;
 use crate::models::Quality;
+use gumdrop::Options;
 
 #[derive(Debug, Options)]
 pub struct ToshoOptions {
     #[options(help = "print help message")]
     help: bool,
     #[options(command, required)]
-    pub command: Option<Command>
+    pub command: Option<Command>,
 }
 
 #[derive(Debug, Options)]
@@ -18,37 +18,37 @@ pub enum Command {
     #[options(help = "check for new shows")]
     Check(CheckOpts),
     #[options(help = "recheck the whole rss page")]
-    Recheck(RecheckOpts)
+    Recheck(RecheckOpts),
 }
 
 #[derive(Debug, Options)]
 pub struct AddOpts {
     #[options(help = "print help message")]
     help: bool,
-    #[options(free, help="Thre group name", required)]
+    #[options(free, help = "Thre group name", required)]
     pub group: String,
-    #[options(free, help="Thre show name", required)]
+    #[options(free, help = "Thre show name", required)]
     pub show: String,
-    #[options(help="The show quality")]
+    #[options(help = "The show quality")]
     pub quality: Option<Quality>,
-    #[options(help="The episode number to start from")]
-    pub start: Option<i32>
+    #[options(help = "The episode number to start from")]
+    pub start: Option<i32>,
 }
 
 #[derive(Debug, Options)]
 pub struct RecheckOpts {
-    #[options(free, help="Which rss page to recheck")]
-    pub page: Option<u8>
+    #[options(free, help = "Which rss page to recheck")]
+    pub page: Option<u8>,
 }
 
 #[derive(Debug, Options)]
 pub struct QueueOpts {
     #[options(help = "print help message")]
-    help: bool
+    help: bool,
 }
 
 #[derive(Debug, Options)]
 pub struct CheckOpts {
     #[options(help = "print help message")]
-    help: bool
+    help: bool,
 }
