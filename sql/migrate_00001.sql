@@ -26,5 +26,5 @@ CREATE TABLE IF NOT EXISTS episodes (
     grabbed BOOLEAN NOT NULL DEFAULT FALSE,
     grabbed_on TIMESTAMP WITHOUT TIME ZONE,
 
-    PRIMARY KEY (show_id, episode)
+    PRIMARY KEY (show_id, episode, version)
 );

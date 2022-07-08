@@ -48,46 +48,52 @@ pub fn add(
     quality: &Option<Quality>,
 ) -> Result<(), Error> {
     println!("[{}] {} - {} [{:?}]", group, name, start, quality);
-    let items = tosho::search(
-        &[
-            group,
-            " ",
-            name,
-            " ",
-            &match quality {
-                Some(q) => q.to_string(),
-                None => "".to_string(),
-            },
-        ]
-        .join(" "),
-    )?;
-    let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
-    for item in items {
-        if let Some(ep) = utils::match_title(&item.title) {
-            if group.contains('*') {
-                if !WildMatch::new(group).is_match(&ep.group) {
+    let mut done = false;
+    for page in 1..10 {
+        let items = tosho::search(
+            &[
+                group, " ", name, " ",
+                // &match quality {
+                //     Some(q) => q.to_string(),
+                //     None => "".to_string()
+                // }
+                "",
+            ]
+            .join(" "),
+            Some(page),
+        )?;
+        let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
+        for item in items {
+            if let Some(ep) = utils::match_title(&item.title) {
+                if group.contains("*") {
+                    if !WildMatch::new(&group).is_match(&ep.group) {
+                        continue;
+                    }
+                } else if ep.group != group {
                     continue;
                 }
-            } else if ep.group != group {
-                continue;
+                if ep.name != name || &ep.quality != quality {
+                    continue;
+                }
+                println!(
+                    "{} {} {} v{} {:?} {:?}",
+                    ep.group, ep.name, ep.episode, ep.version, ep.quality, ep.extension
+                );
+                // TODO: what am i actually doing with the * here?
+                filtered.push((
+                    ep.episode,
+                    ep.version,
+                    item.nzb_link.to_string(),
+                    ep.episode < start,
+                ));
+                done = done || ep.episode == start;
             }
-            if ep.name != name || &ep.quality != quality {
-                continue;
-            }
-            println!(
-                "{} {} {} v{} {:?} {:?}",
-                ep.group, ep.name, ep.episode, ep.version, ep.quality, ep.extension
-            );
-            // TODO: what am i actually doing with the * here?
-            filtered.push((
-                ep.episode,
-                ep.version,
-                item.nzb_link.to_string(),
-                ep.episode < start,
-            ));
+        }
+        db.add_show_and_episodes(&group, &name, &quality, &filtered)?;
+        if done {
+            break;
         }
     }
-    db.add_show_and_episodes(group, name, quality, &filtered)?;
     Ok(())
 }
 
@@ -222,7 +228,7 @@ pub fn check_missing(db: &mut Database) -> Result<(), Error> {
             ];
             arr.join(" ")
         };
-        let results = tosho::search(&terms)?;
+        let results = tosho::search(&terms, Some(1))?;
         for item in results {
             if item.nzb_link.is_empty() {
                 continue;

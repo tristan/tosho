@@ -73,7 +73,7 @@ impl Database {
                 r#"INSERT INTO episodes
                              (show_id, episode, version, link, grabbed)
                              VALUES ($1, $2, $3, $4, $5)
-                             ON CONFLICT (show_id, episode)
+                             ON CONFLICT (show_id, episode, version)
                              DO NOTHING"#,
                 params![&show_id, &ep.0, &ep.1, &ep.2, &ep.3],
             )?;
@@ -89,9 +89,9 @@ impl Database {
                 r#"INSERT INTO episodes
                              (show_id, episode, version, link, grabbed)
                              VALUES ($1, $2, $3, $4, FALSE)
-                             ON CONFLICT (show_id, episode)
+                             ON CONFLICT (show_id, episode, version)
                              DO UPDATE
-                             SET link = EXCLUDED.link, version = EXCLUDED.version"#,
+                             SET link = EXCLUDED.link"#,
                 params![&show_id, &ep, &version, &link],
             )?;
         }

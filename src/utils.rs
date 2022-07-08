@@ -51,7 +51,7 @@ fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32)> {
                         Ok(ep) => ep,
                         Err(_) => return None,
                     };
-                    rsn.next().map(|name| (name.to_string(), ep, 0))
+                    rsn.next().map(|name| (name.to_string(), ep, 1))
                 }
                 _ => None,
             }
@@ -66,8 +66,13 @@ pub fn match_title(title: &str) -> Option<Episode> {
     }
     if let Some(idx) = title.find(']') {
         let group = title[1..idx].to_string();
+        let (sqc, eqc, eqc_char) = if &group == "SubsPlease" || &group == "PAS" {
+            ("(", ")", ')')
+        } else {
+            ("[", "]", ']')
+        };
 
-        if let Some(qidx) = title[idx + 1..].find('[') {
+        if let Some(qidx) = title[idx + 1..].find(sqc) {
             let qidx = qidx + idx + 1;
             let (name, episode, version) = match match_name_ep_version(&title[idx + 1..qidx]) {
                 Some((name, episode, version)) => (name, episode, version),
@@ -77,10 +82,10 @@ pub fn match_title(title: &str) -> Option<Episode> {
                 },
             };
             let (qidx, version) = if version == 1 && &title[qidx + 1..qidx + 2] == "v" {
-                match title[qidx + 1..].find(']') {
+                match title[qidx + 1..].find(eqc) {
                     Some(veidx) => match title[qidx + 2..qidx + 1 + veidx].parse::<i32>() {
                         Ok(v) => {
-                            if let Some(qsidx) = title[qidx + 2..].find('[') {
+                            if let Some(qsidx) = title[qidx + 2..].find(sqc) {
                                 (qidx + 2 + qsidx, v)
                             } else {
                                 return None;
@@ -90,14 +95,23 @@ pub fn match_title(title: &str) -> Option<Episode> {
                     },
                     None => return None,
                 }
+            } else if title.len() < qidx + 5 {
+                (qidx, version)
             } else if &title[qidx + 1..qidx + 5] == "VRV]" {
                 (qidx + 5, version)
+            } else if &title[qidx + 1..qidx + 5] == "WEB " {
+                (qidx + 4, version)
             } else {
                 (qidx, version)
             };
-            let quality = match title[qidx + 1..].find(']') {
+            let quality = match title[qidx + 1..].find(|c| c == eqc_char || c == ' ') {
                 Some(qeidx) => Quality::from_str(&title[qidx + 1..qidx + 1 + qeidx]).ok(),
-                None => return None,
+                None => return None
+            };
+            let extension = if let Some(ext_idx) = title[qidx..].rfind('.') {
+                Some(title[qidx + ext_idx + 1..].to_string())
+            } else {
+                None
             };
             let extension = title[qidx..]
                 .rfind('.')
@@ -226,6 +240,34 @@ mod test {
         assert_eq!(ep.group, "EMBER");
         assert_eq!(ep.episode, 1);
         assert_eq!(ep.quality, Some(Quality::HD_1080p));
-        assert_eq!(ep.version, 0);
+        assert_eq!(ep.version, 1);
+
+        let ep = match_title("[SubsPlease] Jujutsu Kaisen - 08 (720p) [E2508E65].mkv")
+            .expect("Failed to match 9th example");
+
+        assert_eq!(ep.name, "Jujutsu Kaisen");
+        assert_eq!(ep.group, "SubsPlease");
+        assert_eq!(ep.episode, 8);
+        assert_eq!(ep.quality, Some(Quality::Mid_720p));
+        assert_eq!(ep.version, 1);
+
+        let ep = match_title("[PAS] Beastars S2 - 13 (WEB 1080 AAC) [8CF487D4].mkv")
+            .expect("Failed to match 10th example");
+
+        assert_eq!(ep.name, "Beastars S2");
+        assert_eq!(ep.group, "PAS");
+        assert_eq!(ep.episode, 13);
+        assert_eq!(ep.quality, Some(Quality::HD_1080p));
+        assert_eq!(ep.version, 1);
+
+        // TODO: fix this
+        let ep = match_title("[SubsPlease] Dragon Quest - Dai no Daibouken (2020) - 08 (720p) [2CB58E42].mkv")
+            .expect("Failed to match 11th example");
+
+        assert_eq!(ep.name, "Dragon Quest - Dai no Daibouken (2020)");
+        assert_eq!(ep.group, "SubsPlease");
+        assert_eq!(ep.episode, 8);
+        assert_eq!(ep.quality, Some(Quality::Mid_720p));
+        assert_eq!(ep.version, 1);
     }
 }

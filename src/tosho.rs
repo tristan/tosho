@@ -28,10 +28,12 @@ impl From<rss::Error> for Error {
     }
 }
 
-pub fn search(terms: &str) -> Result<Vec<rss::Item>, Error> {
-    let query = terms.split(' ').collect::<Vec<&str>>().join("+");
-
-    let url = &[ANIMETOSHO_RSS_URL, "?q=", &query].join("");
+pub fn search(terms: &str, page: Option<u8>) -> Result<Vec<rss::Item>, Error> {
+    let query = terms.split(' ')
+        .collect::<Vec<&str>>()
+        .join("+");
+    let page = page.unwrap_or(1);
+    let url = &[ANIMETOSHO_RSS_URL, "?q=", &query, "&page=", &page.to_string()].join("");
     results_from_url(url)
 }
 

@@ -30,7 +30,7 @@ pub struct SabnzbdClient {
 struct JsonResponse {
     status: bool,
     error: Option<String>,
-    //nzo_ids: Option<Vec<String>>
+    // nzo_ids: Option<Vec<String>>
 }
 
 fn handle_response(json: JsonResponse) -> Result<(), Error> {
