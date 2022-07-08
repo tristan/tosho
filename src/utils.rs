@@ -31,6 +31,35 @@ fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
     }
 }
 
+fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32)> {
+    let mut rsn = text.trim().rsplitn(2, ' ').map(str::trim);
+    match rsn.next() {
+        Some(part) if part.len() == 6 => {
+            let mut chars = part.chars();
+            match (
+                chars.next().unwrap(),
+                chars.next().unwrap(),
+                chars.next().unwrap(),
+                chars.next().unwrap(),
+                chars.next().unwrap(),
+                chars.next().unwrap(),
+            ) {
+                ('S', s1, s2, 'E', e1, e2)
+                    if s1.is_numeric() && s2.is_numeric() && e1.is_numeric() && e2.is_numeric() =>
+                {
+                    let ep = match part[4..].parse() {
+                        Ok(ep) => ep,
+                        Err(_) => return None,
+                    };
+                    rsn.next().map(|name| (name.to_string(), ep, 0))
+                }
+                _ => None,
+            }
+        },
+        _ => None
+    }
+}
+
 pub fn match_title(title: &str) -> Option<Episode> {
     if !title.starts_with('[') {
         return None;
@@ -42,7 +71,10 @@ pub fn match_title(title: &str) -> Option<Episode> {
             let qidx = qidx + idx + 1;
             let (name, episode, version) = match match_name_ep_version(&title[idx + 1..qidx]) {
                 Some((name, episode, version)) => (name, episode, version),
-                None => return None,
+                None => match match_name_sxxexx(&title[idx + 1..qidx]) {
+                    Some((name, episode, version)) => (name, episode, version),
+                    None => return None,
+                },
             };
             let (qidx, version) = if version == 1 && &title[qidx + 1..qidx + 2] == "v" {
                 match title[qidx + 1..].find(']') {
@@ -184,5 +216,16 @@ mod test {
         assert_eq!(ep.episode, 5);
         assert_eq!(ep.quality, Some(Quality::Low_480p));
         assert_eq!(ep.version, 2);
+
+        let ep = match_title(
+            "[EMBER] Isekai Ojisan S01E01 [1080p] [HEVC WEBRip DDP] (Uncle from Another World)",
+        )
+        .expect("Failed to match 8th example");
+
+        assert_eq!(ep.name, "Isekai Ojisan");
+        assert_eq!(ep.group, "EMBER");
+        assert_eq!(ep.episode, 1);
+        assert_eq!(ep.quality, Some(Quality::HD_1080p));
+        assert_eq!(ep.version, 0);
     }
 }
