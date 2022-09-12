@@ -284,8 +284,9 @@ pub fn queue(db: &Database, sabnzbd: &SabnzbdClient) -> Result<(), Error> {
 }
 
 pub fn dog(apikey: &str, sabnzbd: &SabnzbdClient) -> Result<(), Error> {
-    for link in dognzb::get_bookmarks(apikey)? {
-        sabnzbd.addurl(&link, "")?;
+    for item in dognzb::get_bookmarks(apikey)? {
+        println!("Grabbing: {}", item.title);
+        sabnzbd.addurl(&item.link, "")?;
     }
     Ok(())
 }

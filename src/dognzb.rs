@@ -117,11 +117,8 @@ impl Item {
     }
 }
 
-pub fn get_bookmarks(apikey: &str) -> Result<Vec<String>, Error> {
+pub fn get_bookmarks(apikey: &str) -> Result<Vec<Item>, Error> {
     let response = curl::get(&format!("https://dognzb.cr/rss.cfm?r={apikey}&t=9000"))?;
-    let links = read_from(&response.body[..])?
-        .into_iter()
-        .map(|item| item.link)
-        .collect();
+    let links = read_from(&response.body[..])?;
     Ok(links)
 }
