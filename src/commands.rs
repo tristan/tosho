@@ -7,10 +7,12 @@ use crate::models::Quality;
 use crate::sabnzbd::{Error as SabnzbdError, SabnzbdClient};
 use crate::tosho;
 use crate::utils;
+use crate::dognzb;
 
 #[derive(Debug)]
 pub enum Error {
     ToshoError(tosho::Error),
+    DogError(dognzb::Error),
     DatabaseError(DatabaseError),
     SabnzbdError(SabnzbdError),
 }
@@ -25,6 +27,12 @@ impl Error {
 impl From<tosho::Error> for Error {
     fn from(err: tosho::Error) -> Error {
         Error::ToshoError(err)
+    }
+}
+
+impl From<dognzb::Error> for Error {
+    fn from(err: dognzb::Error) -> Error {
+        Error::DogError(err)
     }
 }
 
@@ -65,8 +73,8 @@ pub fn add(
         let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
         for item in items {
             if let Some(ep) = utils::match_title(&item.title) {
-                if group.contains("*") {
-                    if !WildMatch::new(&group).is_match(&ep.group) {
+                if group.contains('*') {
+                    if !WildMatch::new(group).is_match(&ep.group) {
                         continue;
                     }
                 } else if ep.group != group {
@@ -89,7 +97,7 @@ pub fn add(
                 done = done || ep.episode == start;
             }
         }
-        db.add_show_and_episodes(&group, &name, &quality, &filtered)?;
+        db.add_show_and_episodes(group, name, quality, &filtered)?;
         if done {
             break;
         }
@@ -271,6 +279,13 @@ pub fn queue(db: &Database, sabnzbd: &SabnzbdClient) -> Result<(), Error> {
         println!("Grabbing: {}", url);
         sabnzbd.addurl(&url, "anime")?;
         db.mark_grabbed(show_id, ep_no)?;
+    }
+    Ok(())
+}
+
+pub fn dog(apikey: &str, sabnzbd: &SabnzbdClient) -> Result<(), Error> {
+    for link in dognzb::get_bookmarks(apikey)? {
+        sabnzbd.addurl(&link, "")?;
     }
     Ok(())
 }

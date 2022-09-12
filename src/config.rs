@@ -8,6 +8,7 @@ use std::path::PathBuf;
 pub struct Config {
     pub database: DatabaseConfig,
     pub sabnzbd: SabnzbdConfig,
+    pub dognzb: DognzbConfig,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +20,11 @@ pub struct SabnzbdConfig {
 #[derive(Debug, Deserialize)]
 pub struct DatabaseConfig {
     pub url: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DognzbConfig {
+    pub apikey: String,
 }
 
 impl Config {

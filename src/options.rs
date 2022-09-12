@@ -19,6 +19,8 @@ pub enum Command {
     Check(CheckOpts),
     #[options(help = "recheck the whole rss page")]
     Recheck(RecheckOpts),
+    #[options(help = "check for new bookmarks on dognzb")]
+    Dog(CheckOpts),
 }
 
 #[derive(Debug, Options)]

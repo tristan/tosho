@@ -10,6 +10,7 @@ mod options;
 mod rss;
 mod sabnzbd;
 mod tosho;
+mod dognzb;
 mod utils;
 
 fn main() {
@@ -40,6 +41,9 @@ fn main() {
         }
         Some(options::Command::Recheck(opts)) => {
             commands::recheck(&mut db, opts.page.unwrap_or(1)).unwrap_or_else(|e| e.exit());
+        }
+        Some(options::Command::Dog(_)) => {
+            commands::dog(&config.dognzb.apikey, &sabnzbd).unwrap_or_else(|e| e.exit());
         }
         None => {
             unreachable!();
