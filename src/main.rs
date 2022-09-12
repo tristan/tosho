@@ -5,12 +5,12 @@ mod commands;
 mod config;
 mod curl;
 mod database;
+mod dognzb;
 mod models;
 mod options;
 mod rss;
 mod sabnzbd;
 mod tosho;
-mod dognzb;
 mod utils;
 
 fn main() {

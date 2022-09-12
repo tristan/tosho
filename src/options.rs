@@ -27,9 +27,9 @@ pub enum Command {
 pub struct AddOpts {
     #[options(help = "print help message")]
     help: bool,
-    #[options(free, help="The group name", required)]
+    #[options(free, help = "The group name", required)]
     pub group: String,
-    #[options(free, help="The show name", required)]
+    #[options(free, help = "The show name", required)]
     pub show: String,
     #[options(help = "The show quality")]
     pub quality: Option<Quality>,

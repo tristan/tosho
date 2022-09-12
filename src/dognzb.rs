@@ -1,11 +1,11 @@
+use crate::curl;
+use crate::rss::{self, element_text};
 use chrono::{DateTime, NaiveDate, NaiveDateTime, ParseError as ChronoParseError};
 use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::Error as XmlError;
 use quick_xml::Reader;
 use std::io::BufRead;
-use crate::curl;
-use crate::rss::{self, element_text};
 
 #[derive(Debug)]
 pub enum Error {
@@ -116,7 +116,6 @@ impl Item {
         Ok(item)
     }
 }
-
 
 pub fn get_bookmarks(apikey: &str) -> Result<Vec<String>, Error> {
     let response = curl::get(&format!("https://dognzb.cr/rss.cfm?r={apikey}&t=9000"))?;

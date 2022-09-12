@@ -3,11 +3,11 @@ use std::process;
 use wildmatch::WildMatch;
 
 use crate::database::{Database, Error as DatabaseError};
+use crate::dognzb;
 use crate::models::Quality;
 use crate::sabnzbd::{Error as SabnzbdError, SabnzbdClient};
 use crate::tosho;
 use crate::utils;
-use crate::dognzb;
 
 #[derive(Debug)]
 pub enum Error {

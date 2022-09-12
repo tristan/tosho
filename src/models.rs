@@ -6,7 +6,7 @@ use std::str::FromStr;
 use std::string::ToString;
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Quality {
     Low_480p,
     Mid_720p,

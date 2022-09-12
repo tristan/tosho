@@ -55,8 +55,8 @@ fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32)> {
                 }
                 _ => None,
             }
-        },
-        _ => None
+        }
+        _ => None,
     }
 }
 
@@ -106,13 +106,13 @@ pub fn match_title(title: &str) -> Option<Episode> {
             };
             let quality = match title[qidx + 1..].find(|c| c == eqc_char || c == ' ') {
                 Some(qeidx) => Quality::from_str(&title[qidx + 1..qidx + 1 + qeidx]).ok(),
-                None => return None
+                None => return None,
             };
-            let extension = if let Some(ext_idx) = title[qidx..].rfind('.') {
-                Some(title[qidx + ext_idx + 1..].to_string())
-            } else {
-                None
-            };
+            // let extension = if let Some(ext_idx) = title[qidx..].rfind('.') {
+            //     Some(title[qidx + ext_idx + 1..].to_string())
+            // } else {
+            //     None
+            // };
             let extension = title[qidx..]
                 .rfind('.')
                 .map(|ext_idx| title[qidx + ext_idx + 1..].to_string());
@@ -261,8 +261,10 @@ mod test {
         assert_eq!(ep.version, 1);
 
         // TODO: fix this
-        let ep = match_title("[SubsPlease] Dragon Quest - Dai no Daibouken (2020) - 08 (720p) [2CB58E42].mkv")
-            .expect("Failed to match 11th example");
+        let ep = match_title(
+            "[SubsPlease] Dragon Quest - Dai no Daibouken (2020) - 08 (720p) [2CB58E42].mkv",
+        )
+        .expect("Failed to match 11th example");
 
         assert_eq!(ep.name, "Dragon Quest - Dai no Daibouken (2020)");
         assert_eq!(ep.group, "SubsPlease");
