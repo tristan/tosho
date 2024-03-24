@@ -65,6 +65,7 @@ pub struct Episode {
     pub group: String,
     pub name: String,
     pub quality: Option<Quality>,
+    pub season: Option<i32>,
     pub episode: i32,
     pub version: i32,
     pub extension: Option<String>,

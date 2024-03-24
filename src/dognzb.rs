@@ -54,7 +54,7 @@ impl Default for Item {
             link: String::default(),
             category: String::default(),
             description: String::default(),
-            pub_date: NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0),
+            pub_date: NaiveDate::from_ymd_opt(2000, 1, 1).unwrap().and_hms_opt(0, 0, 0).unwrap(),
             guid: String::default(),
         }
     }

@@ -28,8 +28,9 @@ fn main() {
             } else {
                 &opts.group
             };
-            let start = opts.start.unwrap_or(1);
-            commands::add(&mut db, group, &opts.show, start, &opts.quality)
+            let start_season = opts.season.unwrap_or(1);
+            let start_ep = opts.start.unwrap_or(1);
+            commands::add(&mut db, group, &opts.show, start_season, start_ep, &opts.quality)
                 .unwrap_or_else(|e| e.exit());
         }
         Some(options::Command::Queue(_)) => {

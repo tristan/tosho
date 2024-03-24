@@ -31,7 +31,7 @@ fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
     }
 }
 
-fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32)> {
+fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32, i32)> {
     let mut rsn = text.trim().rsplitn(2, ' ').map(str::trim);
     match rsn.next() {
         Some(part) if part.len() == 6 => {
@@ -47,12 +47,16 @@ fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32)> {
                 ('S', s1, s2, 'E', e1, e2)
                     if s1.is_numeric() && s2.is_numeric() && e1.is_numeric() && e2.is_numeric() =>
                 {
+                    let season = match part[1..3].parse() {
+                        Ok(season) => season,
+                        Err(_) => return None,
+                    };
                     let ep = match part[4..].parse() {
                         Ok(ep) => ep,
                         Err(_) => return None,
                     };
                     rsn.next()
-                        .map(|name| (name.trim_end_matches('-').trim_end().to_string(), ep, 1))
+                        .map(|name| (name.trim_end_matches('-').trim_end().to_string(), season, ep, 1))
                 }
                 _ => None,
             }
@@ -75,10 +79,10 @@ pub fn match_title(title: &str) -> Option<Episode> {
 
         if let Some(qidx) = title[idx + 1..].find(sqc) {
             let qidx = qidx + idx + 1;
-            let (name, episode, version) = match match_name_ep_version(&title[idx + 1..qidx]) {
-                Some((name, episode, version)) => (name, episode, version),
+            let (name, season, episode, version) = match match_name_ep_version(&title[idx + 1..qidx]) {
+                Some((name, episode, version)) => (name, None, episode, version),
                 None => match match_name_sxxexx(&title[idx + 1..qidx]) {
-                    Some((name, episode, version)) => (name, episode, version),
+                    Some((name, season, episode, version)) => (name, Some(season), episode, version),
                     None => return None,
                 },
             };
@@ -120,6 +124,7 @@ pub fn match_title(title: &str) -> Option<Episode> {
             Some(Episode {
                 group,
                 name,
+                season,
                 episode,
                 version,
                 quality,
@@ -134,6 +139,7 @@ pub fn match_title(title: &str) -> Option<Episode> {
             Some(Episode {
                 group,
                 name,
+                season: None,
                 episode,
                 version,
                 quality: None,
@@ -147,6 +153,7 @@ pub fn match_title(title: &str) -> Option<Episode> {
             Some(Episode {
                 group,
                 name,
+                season: None,
                 episode,
                 version,
                 quality: None,
@@ -240,6 +247,7 @@ mod test {
         assert_eq!(ep.name, "Isekai Ojisan");
         assert_eq!(ep.group, "EMBER");
         assert_eq!(ep.episode, 1);
+        assert_eq!(ep.season, Some(1));
         assert_eq!(ep.quality, Some(Quality::HD_1080p));
         assert_eq!(ep.version, 1);
 
@@ -257,6 +265,7 @@ mod test {
 
         assert_eq!(ep.name, "Beastars S2");
         assert_eq!(ep.group, "PAS");
+        assert_eq!(ep.season, None);
         assert_eq!(ep.episode, 13);
         assert_eq!(ep.quality, Some(Quality::HD_1080p));
         assert_eq!(ep.version, 1);
@@ -275,14 +284,27 @@ mod test {
 
         let ep = match_title(
             "[Judas] Kimetsu no Yaiba - Katanakaji no Sato-hen (Demon Slayer - Swordsmith Village Arc) - S04E06 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)")
-            .expect("Failed to matfch 12th example");
-        dbg!(&ep);
+            .expect("Failed to match 12th example");
 
         assert_eq!(
             ep.name,
             "Kimetsu no Yaiba - Katanakaji no Sato-hen (Demon Slayer - Swordsmith Village Arc)"
         );
         assert_eq!(ep.group, "Judas");
+        assert_eq!(ep.season, Some(4));
+        assert_eq!(ep.episode, 6);
+        assert_eq!(ep.quality, Some(Quality::HD_1080p));
+        assert_eq!(ep.version, 1);
+
+        let ep = match_title(
+            "[EMBER] Dr. Stone S03E06 [1080p] [HEVC WEBRip] (Dr. Stone: New World)")
+            .expect("Failsed to match 13th example");
+        assert_eq!(
+            ep.name,
+            "Dr. Stone"
+        );
+        assert_eq!(ep.group, "EMBER");
+        assert_eq!(ep.season, Some(3));
         assert_eq!(ep.episode, 6);
         assert_eq!(ep.quality, Some(Quality::HD_1080p));
         assert_eq!(ep.version, 1);

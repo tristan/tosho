@@ -52,10 +52,11 @@ pub fn add(
     db: &mut Database,
     group: &str,
     name: &str,
-    start: i32,
+    start_season: i32,
+    start_episode: i32,
     quality: &Option<Quality>,
 ) -> Result<(), Error> {
-    println!("[{}] {} - {} [{:?}]", group, name, start, quality);
+    println!("[{}] {} - S{:02}E{:02} [{:?}]", group, name, start_season, start_episode, quality);
     let mut done = false;
     for page in 1..10 {
         let items = tosho::search(
@@ -70,7 +71,7 @@ pub fn add(
             .join(" "),
             Some(page),
         )?;
-        let mut filtered: Vec<(i32, i32, String, bool)> = Vec::new();
+        let mut filtered: Vec<(i32, i32, i32, String, bool)> = Vec::new();
         for item in items {
             if let Some(ep) = utils::match_title(&item.title) {
                 if group.contains('*') {
@@ -83,18 +84,20 @@ pub fn add(
                 if ep.name != name || &ep.quality != quality {
                     continue;
                 }
+                let ep_season = ep.season.unwrap_or(1);
                 println!(
-                    "{} {} {} v{} {:?} {:?}",
-                    ep.group, ep.name, ep.episode, ep.version, ep.quality, ep.extension
+                    "{} {} S{:02}E{:02} v{} {:?} {:?}",
+                    ep.group, ep.name, ep_season, ep.episode, ep.version, ep.quality, ep.extension
                 );
                 // TODO: what am i actually doing with the * here?
                 filtered.push((
+                    ep_season,
                     ep.episode,
                     ep.version,
                     item.nzb_link.to_string(),
-                    ep.episode < start,
+                    ep_season < start_season || (ep_season == start_season && ep.episode < start_episode),
                 ));
-                done = done || ep.episode == start;
+                done = done || ep_season == start_season && ep.episode == start_episode;
             }
         }
         db.add_show_and_episodes(group, name, quality, &filtered)?;

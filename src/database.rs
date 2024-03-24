@@ -56,7 +56,7 @@ impl Database {
         group: &str,
         name: &str,
         quality: &Option<Quality>,
-        episodes: &Vec<(i32, i32, String, bool)>,
+        episodes: &Vec<(i32, i32, i32, String, bool)>,
     ) -> Result<(), Error> {
         let trans = self.conn.transaction()?;
         let show_id: i64 = trans.query_row(r#"SELECT MAX(show_id) + 1 FROM shows"#, [], |row| {
@@ -71,11 +71,11 @@ impl Database {
         for ep in episodes {
             trans.execute(
                 r#"INSERT INTO episodes
-                             (show_id, episode, version, link, grabbed)
-                             VALUES ($1, $2, $3, $4, $5)
-                             ON CONFLICT (show_id, episode, version)
+                             (show_id, season, episode, version, link, grabbed)
+                             VALUES ($1, $2, $3, $4, $5, $6)
+                             ON CONFLICT (show_id, season, episode, version)
                              DO NOTHING"#,
-                params![&show_id, &ep.0, &ep.1, &ep.2, &ep.3],
+                params![&show_id, &ep.0, &ep.1, &ep.2, &ep.3, &ep.4],
             )?;
         }
         trans.commit()?;

@@ -35,6 +35,8 @@ pub struct AddOpts {
     pub quality: Option<Quality>,
     #[options(help = "The episode number to start from")]
     pub start: Option<i32>,
+    #[options(help = "The season to start from")]
+    pub season: Option<i32>,
 }
 
 #[derive(Debug, Options)]
