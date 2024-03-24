@@ -5,13 +5,13 @@ authors = ["Tristan King <tristan.king@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-toml = "0.5"
-quick-xml = "0.18"
+toml = "0.8"
+quick-xml = "0.31"
 chrono = "0.4"
 gumdrop = "0.8"
 curl = "0.4"
-url = "2.1"
+url = "2.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-wildmatch = "1.0"
-rusqlite = { version = "0.27", features = ["chrono"] }
+wildmatch = "2.3"
+rusqlite = { version = "0.31", features = ["chrono"] }

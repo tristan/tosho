@@ -120,7 +120,7 @@ impl Database {
         for row in show_iter {
             let (show_id, db_group, db_quality) = row?;
             if db_group.contains('*') {
-                if !WildMatch::new(&db_group).is_match(group) {
+                if !WildMatch::new(&db_group).matches(group) {
                     continue;
                 }
             } else if db_group != group {

@@ -3,6 +3,7 @@ use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::Error as XmlError;
 use quick_xml::Reader;
+use quick_xml::name::QName;
 use std::io::BufRead;
 
 #[derive(Debug)]
@@ -63,9 +64,9 @@ pub fn read_from<R: BufRead>(reader: R) -> Result<Vec<Item>, Error> {
     let mut items: Vec<Item> = Vec::new();
 
     loop {
-        match reader.read_event(&mut buf) {
+        match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
-                if let b"item" = e.name() {
+                if let b"item" = e.name().as_ref() {
                     let item = Item::from_xml(&mut reader, e.attributes())?;
                     items.push(item);
                 }
@@ -88,8 +89,8 @@ impl Item {
         let mut buf = Vec::new();
 
         loop {
-            match reader.read_event(&mut buf)? {
-                Event::Start(e) => match e.name() {
+            match reader.read_event_into(&mut buf)? {
+                Event::Start(e) => match e.name().as_ref() {
                     b"enclosure" => {
                         let enclosure = Enclosure::from_xml(reader, e.attributes())?;
                         match enclosure.mime_type.as_ref() {
@@ -120,8 +121,8 @@ impl Item {
                             item.guid = suffix.to_string();
                         }
                     }
-                    n => {
-                        reader.read_to_end(n, &mut Vec::new())?;
+                    _ => {
+                        reader.read_to_end_into(e.name(), &mut Vec::new())?;
                     }
                 },
                 Event::End(_) => break,
@@ -141,20 +142,20 @@ impl Enclosure {
     ) -> Result<Self, Error> {
         let mut enclosure = Enclosure::default();
         for attr in attributes.with_checks(false).flatten() {
-            match attr.key {
+            match attr.key.as_ref() {
                 b"url" => {
-                    enclosure.url = attr.unescape_and_decode_value(reader)?;
+                    enclosure.url = attr.decode_and_unescape_value(reader)?.into_owned();
                 }
                 b"length" => {
-                    enclosure.length = attr.unescape_and_decode_value(reader)?;
+                    enclosure.length = attr.decode_and_unescape_value(reader)?.into_owned();
                 }
                 b"type" => {
-                    enclosure.mime_type = attr.unescape_and_decode_value(reader)?;
+                    enclosure.mime_type = attr.decode_and_unescape_value(reader)?.into_owned();
                 }
                 _ => {}
             }
         }
-        reader.read_to_end(b"enclosure", &mut Vec::new())?;
+        reader.read_to_end_into(QName(b"enclosure"), &mut Vec::new())?;
         Ok(enclosure)
     }
 }
@@ -165,16 +166,16 @@ pub fn element_text<R: BufRead>(reader: &mut Reader<R>) -> Result<String, Error>
     let mut skip_buf = Vec::new();
 
     loop {
-        match reader.read_event(&mut buf)? {
+        match reader.read_event_into(&mut buf)? {
             Event::Start(element) => {
-                reader.read_to_end(element.name(), &mut skip_buf)?;
+                reader.read_to_end_into(element.name(), &mut skip_buf)?;
             }
             Event::CData(element) => {
-                let text = reader.decode(&*element)?.to_string();
+                let text = reader.decoder().decode(&element)?.to_string();
                 content = Some(text);
             }
             Event::Text(element) => {
-                let text = element.unescape_and_decode(reader)?;
+                let text = element.unescape()?.into_owned();
                 content = Some(text);
             }
             Event::End(_) | Event::Eof => break,

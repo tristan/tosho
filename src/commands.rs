@@ -75,7 +75,7 @@ pub fn add(
         for item in items {
             if let Some(ep) = utils::match_title(&item.title) {
                 if group.contains('*') {
-                    if !WildMatch::new(group).is_match(&ep.group) {
+                    if !WildMatch::new(group).matches(&ep.group) {
                         continue;
                     }
                 } else if ep.group != group {
@@ -246,7 +246,7 @@ pub fn check_missing(db: &mut Database) -> Result<(), Error> {
             }
             if let Some(ep) = utils::match_title(&item.title) {
                 if group.contains('*') {
-                    if !WildMatch::new(&group).is_match(&ep.group) {
+                    if !WildMatch::new(&group).matches(&ep.group) {
                         continue;
                     }
                 } else if ep.group != group {

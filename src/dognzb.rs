@@ -68,9 +68,9 @@ fn read_from<R: BufRead>(reader: R) -> Result<Vec<Item>, Error> {
     let mut items: Vec<Item> = Vec::new();
 
     loop {
-        match reader.read_event(&mut buf) {
+        match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
-                if let b"item" = e.name() {
+                if let b"item" = e.name().as_ref() {
                     let item = Item::from_xml(&mut reader, e.attributes())?;
                     items.push(item);
                 }
@@ -93,8 +93,8 @@ impl Item {
         let mut buf = Vec::new();
 
         loop {
-            match reader.read_event(&mut buf)? {
-                Event::Start(e) => match e.name() {
+            match reader.read_event_into(&mut buf)? {
+                Event::Start(e) => match e.name().as_ref() {
                     b"title" => item.title = element_text(reader)?,
                     b"link" => item.link = element_text(reader)?,
                     b"description" => item.description = element_text(reader)?,
@@ -103,8 +103,8 @@ impl Item {
                             DateTime::parse_from_rfc2822(&element_text(reader)?)?.naive_utc()
                     }
                     b"guid" => item.guid = element_text(reader)?,
-                    n => {
-                        reader.read_to_end(n, &mut Vec::new())?;
+                    _ => {
+                        reader.read_to_end_into(e.name(), &mut Vec::new())?;
                     }
                 },
                 Event::End(_) => break,
