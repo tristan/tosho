@@ -34,7 +34,7 @@ fn match_name_ep_version(text: &str) -> Option<(String, i32, i32)> {
 fn match_name_sxxexx(text: &str) -> Option<(String, i32, i32, i32)> {
     let mut rsn = text.trim().rsplitn(2, ' ').map(str::trim);
     match rsn.next() {
-        Some(part) if part.len() == 6 => {
+        Some(part) if part.len() == 6 && part.chars().count() == 6 => {
             let mut chars = part.chars();
             match (
                 chars.next().unwrap(),
