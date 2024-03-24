@@ -19,6 +19,7 @@ ON shows (LOWER("group"), LOWER(name), LOWER(quality));
 
 CREATE TABLE IF NOT EXISTS episodes (
     show_id BIGINT NOT NULL REFERENCES shows (show_id),
+    season INTEGER NOT NULL DEFAULT 1,
     season INTEGER,
     episode INTEGER NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
@@ -29,25 +30,3 @@ CREATE TABLE IF NOT EXISTS episodes (
 
     PRIMARY KEY (show_id, season, episode, version)
 );
-
-/*
-CREATE TABLE episodes2 (
-    show_id BIGINT NOT NULL REFERENCES shows (show_id),
-    season INTEGER NOT NULL DEFAULT 1,
-    episode INTEGER NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-
-    link VARCHAR NOT NULL,
-    grabbed BOOLEAN NOT NULL DEFAULT FALSE,
-    grabbed_on TIMESTAMP WITHOUT TIME ZONE,
-
-    PRIMARY KEY (show_id, season, episode, version)
-);
-
-INSERT INTO episodes2
-SELECT shop_id, 1, episode, version, link, grabbed, grabbed_on
-FROM episodes;
-
-DROP TABLE episodes;
-ALTER TABLE episodes2 RENAME TO episodes;
-*/
