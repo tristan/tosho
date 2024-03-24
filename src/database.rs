@@ -82,17 +82,18 @@ impl Database {
         Ok(())
     }
 
-    pub fn add_episodes(&mut self, episodes: &Vec<(i64, i32, i32, String)>) -> Result<(), Error> {
+    pub fn add_episodes(&mut self, episodes: &Vec<(i64, Option<i32>, i32, i32, String)>) -> Result<(), Error> {
         let trans = self.conn.transaction()?;
-        for (show_id, ep, version, link) in episodes {
+        for (show_id, season, ep, version, link) in episodes {
+            let season = season.unwrap_or(1);
             trans.execute(
                 r#"INSERT INTO episodes
-                             (show_id, episode, version, link, grabbed)
-                             VALUES ($1, $2, $3, $4, FALSE)
-                             ON CONFLICT (show_id, episode, version)
+                             (show_id, season, episode, version, link, grabbed)
+                             VALUES ($1, $2, $3, $4, $5, FALSE)
+                             ON CONFLICT (show_id, season, episode, version)
                              DO UPDATE
                              SET link = EXCLUDED.link"#,
-                params![&show_id, &ep, &version, &link],
+                params![&show_id, &season, &ep, &version, &link],
             )?;
         }
         trans.commit()?;

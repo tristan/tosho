@@ -112,7 +112,7 @@ pub fn check(db: &mut Database) -> Result<(), Error> {
     let last_pub_date = db.get_last_pub_date()?;
     let mut newest_pub_date = last_pub_date;
     let mut page = 1;
-    let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
+    let mut new_episodes: Vec<(i64, Option<i32>, i32, i32, String)> = Vec::new();
     'outer: loop {
         println!("getting feed page: {}", page);
         let items = tosho::feed(&page)?;
@@ -143,7 +143,7 @@ pub fn check(db: &mut Database) -> Result<(), Error> {
                     } else {
                         println!();
                     }
-                    new_episodes.push((show_id, ep.episode, ep.version, item.nzb_link.to_string()));
+                    new_episodes.push((show_id, ep.season, ep.episode, ep.version, item.nzb_link.to_string()));
                 }
             }
         }
@@ -157,7 +157,7 @@ pub fn check(db: &mut Database) -> Result<(), Error> {
 }
 
 pub fn recheck(db: &mut Database, page: u8) -> Result<(), Error> {
-    let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
+    let mut new_episodes: Vec<(i64, Option<i32>, i32, i32, String)> = Vec::new();
     println!("getting feed page: {}", page);
     let items = tosho::feed(&page)?;
     for item in items {
@@ -183,7 +183,7 @@ pub fn recheck(db: &mut Database, page: u8) -> Result<(), Error> {
                     } else {
                         println!();
                     }
-                    new_episodes.push((show_id, ep.episode, ep.version, item.nzb_link.to_string()));
+                    new_episodes.push((show_id, ep.season, ep.episode, ep.version, item.nzb_link.to_string()));
                 } else {
                     println!(
                         "Skipping existing [{}] {} - {} v{} [{}]",
@@ -207,7 +207,7 @@ pub fn recheck(db: &mut Database, page: u8) -> Result<(), Error> {
 
 pub fn check_missing(db: &mut Database) -> Result<(), Error> {
     let missing_episodes = db.list_episodes_missing_nzb()?;
-    let mut new_episodes: Vec<(i64, i32, i32, String)> = Vec::new();
+    let mut new_episodes: Vec<(i64, Option<i32>, i32, i32, String)> = Vec::new();
     for episode in missing_episodes {
         let show_id = episode.0;
         let name = episode.1;
@@ -263,7 +263,7 @@ pub fn check_missing(db: &mut Database) -> Result<(), Error> {
                             .map(|q| q.to_string())
                             .unwrap_or_else(|| "".to_string())
                     );
-                    new_episodes.push((show_id, ep.episode, ep.version, item.nzb_link.to_string()));
+                    new_episodes.push((show_id, ep.season, ep.episode, ep.version, item.nzb_link.to_string()));
                 }
             }
         }

@@ -20,7 +20,6 @@ ON shows (LOWER("group"), LOWER(name), LOWER(quality));
 CREATE TABLE IF NOT EXISTS episodes (
     show_id BIGINT NOT NULL REFERENCES shows (show_id),
     season INTEGER NOT NULL DEFAULT 1,
-    season INTEGER,
     episode INTEGER NOT NULL,
     version INTEGER NOT NULL DEFAULT 1,
 
